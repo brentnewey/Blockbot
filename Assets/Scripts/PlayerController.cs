@@ -4,64 +4,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public enum Item
-{
-    BoxingGlove,
-    None
-}
-
-public enum MoveType
-{
-    Face,
-    Move,
-    Push,
-    Punch
-}
-
-public enum MoveDirection
-{
-    Up,
-    Down,
-    Left,
-    Right
-}
-
-public class MoveUnit
-{
-    public MoveType moveType;
-    public MoveDirection moveDirection;
-    public Item currentItem;
-    public IPickupable currentItemController;
-
-    public MoveUnit(MoveType moveType, MoveDirection moveDirection, Item currentItem, IPickupable currentItemController)
-    {
-        this.moveType = moveType;
-        this.moveDirection = moveDirection;
-        this.currentItem = currentItem;
-        this.currentItemController = currentItemController;
-    }
-}
-
-class MoveRecord
-{
-    public MoveUnit fromMove;
-    public MoveUnit toMove;
-
-    public MoveRecord(MoveUnit fromMove, MoveUnit toMove)
-    {
-        this.fromMove = fromMove;
-        this.toMove = toMove;
-    }
-}
-
-class PulsableComparer : IComparer<IPulsable>
-{
-    public int Compare(IPulsable p1, IPulsable p2)
-    {
-        return p1.pulsePriority().CompareTo(p2.pulsePriority());
-    }
-}
-
 public class PlayerController : MonoBehaviour
 {
 
@@ -81,13 +23,11 @@ public class PlayerController : MonoBehaviour
     public MoveUnit lastMove = new MoveUnit(MoveType.Face, MoveDirection.Down, Item.None, null);
     Stack<MoveRecord> moveChain = new Stack<MoveRecord>();
 
-    // Start is called before the first frame update
+
     void Start()
     {
-        movePoint.parent = null; 
+        movePoint.parent = null;
     }
-
-
 
     IEnumerator waitToMove()
     {
@@ -98,7 +38,7 @@ public class PlayerController : MonoBehaviour
     IEnumerator waitToReset()
     {
         yield return new WaitForSeconds(1f);
-        if(Input.GetKey(KeyCode.R))
+        if (Input.GetKey(KeyCode.R))
         {
             SceneManager.LoadScene(currentScene);
         }
@@ -106,8 +46,17 @@ public class PlayerController : MonoBehaviour
 
     void pushMove(MoveUnit move)
     {
+        Debug.Log("Pushing Move");
+        Debug.Log(move.moveType);
+        Debug.Log(move.moveDirection);
         moveChain.Push(new MoveRecord(lastMove, move));
+        Debug.Log(moveChain.Count);
         lastMove = move;
+    }
+
+    void pushFacingMove(MoveType moveType)
+    {
+        pushMove(new MoveUnit(moveType, facing, currentItem, currentItemController));
     }
 
     void undoMove()
@@ -117,83 +66,28 @@ public class PlayerController : MonoBehaviour
             return;
         }
         MoveRecord moveRecordToUndo = moveChain.Pop();
-        Debug.Log("Undo Move:");
-        Debug.Log(moveRecordToUndo.fromMove);
-        Debug.Log(moveRecordToUndo.toMove);
         lastMove = moveRecordToUndo.fromMove;
+        Debug.Log("Popping Move");
+        Debug.Log(moveRecordToUndo.toMove.moveType);
+        Debug.Log(moveRecordToUndo.toMove.moveDirection);
+        Debug.Log(moveChain.Count);
         if (moveRecordToUndo.toMove.moveType == MoveType.Face)
         {
-            if(moveRecordToUndo.fromMove.moveDirection == MoveDirection.Down)
-            {
-                transform.eulerAngles = new Vector3(0.0f, 0.0f, 0.0f);
-                facing = MoveDirection.Down;
-            }
-            else if (moveRecordToUndo.fromMove.moveDirection == MoveDirection.Up)
-            {
-                transform.eulerAngles = new Vector3(0.0f, 0.0f, 180.0f);
-                facing = MoveDirection.Up;
-            }
-            else if (moveRecordToUndo.fromMove.moveDirection == MoveDirection.Left)
-            {
-                transform.eulerAngles = new Vector3(0.0f, 0.0f, -90.0f);
-                facing = MoveDirection.Left;
-            }
-            else if (moveRecordToUndo.fromMove.moveDirection == MoveDirection.Right)
-            {
-                transform.eulerAngles = new Vector3(0.0f, 0.0f, 90.0f);
-                facing = MoveDirection.Right;
-            }
+            facing = moveRecordToUndo.fromMove.moveDirection;
+            transform.eulerAngles = Global.faceVectors[moveRecordToUndo.fromMove.moveDirection];
         }
         if (moveRecordToUndo.toMove.moveType == MoveType.Push)
         {
-            Vector3 blockLocationVector;
-
-            if (moveRecordToUndo.toMove.moveDirection == MoveDirection.Left)
-            {
-                blockLocationVector = new Vector3(transform.position.x - 1, transform.position.y, 0);
-            }
-            else if (moveRecordToUndo.toMove.moveDirection == MoveDirection.Right)
-            {
-                blockLocationVector = new Vector3(transform.position.x + 1, transform.position.y, 0);
-            }
-            else if (moveRecordToUndo.toMove.moveDirection == MoveDirection.Up)
-            {
-                blockLocationVector = new Vector3(transform.position.x, transform.position.y + 1, 0);
-            }
-            else
-            {
-                blockLocationVector = new Vector3(transform.position.x, transform.position.y - 1, 0);
-            }
-
-            Collider2D collider = Physics2D.OverlapCircle(blockLocationVector, .2f);
-            collider.gameObject.GetComponent<BlockController>().shift(transform.position);
+            Vector3 blockLocationVector = transform.position + Global.moveVectors[moveRecordToUndo.toMove.moveDirection];
+            Collider2D blockCollider = Physics2D.OverlapCircle(blockLocationVector, .2f);
+            blockCollider.gameObject.GetComponent<BlockController>().shift(transform.position);
         }
 
         if (moveRecordToUndo.toMove.moveType == MoveType.Move || moveRecordToUndo.toMove.moveType == MoveType.Push)
         {
-            if (moveRecordToUndo.toMove.moveDirection == MoveDirection.Left)
-            {
-                transform.position = new Vector3(transform.position.x + 1, transform.position.y, 0);
-                movePoint.position = transform.position;
-            }
-            else if (moveRecordToUndo.toMove.moveDirection == MoveDirection.Right)
-            {
-                transform.position = new Vector3(transform.position.x - 1, transform.position.y, 0);
-                movePoint.position = transform.position;
-            }
-            else if (moveRecordToUndo.toMove.moveDirection == MoveDirection.Up)
-            {
-                transform.position = new Vector3(transform.position.x, transform.position.y - 1, 0);
-                movePoint.position = transform.position;
-            }
-            else if (moveRecordToUndo.toMove.moveDirection == MoveDirection.Down)
-            {
-                transform.position = new Vector3(transform.position.x, transform.position.y + 1, 0);
-                movePoint.position = transform.position;
-            }
+            transform.position -= Global.moveVectors[moveRecordToUndo.toMove.moveDirection];
+            movePoint.position = transform.position;
 
-            Debug.Log(moveRecordToUndo.toMove.currentItem);
-            Debug.Log(moveRecordToUndo.fromMove.currentItem);
             if (moveRecordToUndo.fromMove.currentItem != moveRecordToUndo.toMove.currentItem)
             {
                 currentItem = moveRecordToUndo.fromMove.currentItem;
@@ -205,36 +99,11 @@ public class PlayerController : MonoBehaviour
 
         if (moveRecordToUndo.toMove.moveType == MoveType.Punch)
         {
-            Vector3 blockLocationVector;
-            Vector3 blockShiftVector;
+            Vector3 blockShiftVector = transform.position + Global.moveVectors[moveRecordToUndo.toMove.moveDirection];
+            Vector3 blockLocationVector = blockShiftVector + Global.moveVectors[moveRecordToUndo.toMove.moveDirection];
 
-            if (moveRecordToUndo.toMove.moveDirection == MoveDirection.Left)
-            {
-                blockLocationVector = new Vector3(transform.position.x - 2, transform.position.y, 0);
-                blockShiftVector = new Vector3(transform.position.x - 1, transform.position.y, 0);
-            }
-            else if (moveRecordToUndo.toMove.moveDirection == MoveDirection.Right)
-            {
-                blockLocationVector = new Vector3(transform.position.x + 2, transform.position.y, 0);
-                blockShiftVector = new Vector3(transform.position.x + 1, transform.position.y, 0);
-            }
-            else if (moveRecordToUndo.toMove.moveDirection == MoveDirection.Up)
-            {
-                blockLocationVector = new Vector3(transform.position.x, transform.position.y + 2, 0);
-                blockShiftVector = new Vector3(transform.position.x, transform.position.y + 1, 0);
-            }
-            else if(moveRecordToUndo.toMove.moveDirection == MoveDirection.Down)
-            {
-                blockLocationVector = new Vector3(transform.position.x, transform.position.y - 2, 0);
-                blockShiftVector = new Vector3(transform.position.x, transform.position.y - 1, 0);
-            }
-            else
-            {
-                throw new Exception();
-            }
-
-            Collider2D collider = Physics2D.OverlapCircle(blockLocationVector, .2f);
-            collider.gameObject.GetComponent<BlockController>().shift(blockShiftVector);
+            Collider2D blockCollider = Physics2D.OverlapCircle(blockLocationVector, .2f);
+            blockCollider.gameObject.GetComponent<BlockController>().shift(blockShiftVector);
             currentItem = Item.BoxingGlove;
         }
 
@@ -242,21 +111,20 @@ public class PlayerController : MonoBehaviour
         hasPulsed = false;
     }
 
-    // Update is called once per frame
     void Update()
     {
 
         transform.position = Vector3.MoveTowards(transform.position, movePoint.position, moveSpeed * Time.deltaTime);
 
 
-        if (Vector2.Distance(transform.position, movePoint.position) <= float.Epsilon)
+        if (Vector3.Distance(transform.position, movePoint.position) <= float.Epsilon)
         {
-            if(!hasPulsed)
+            if (!hasPulsed)
             {
                 executePulse();
             }
 
-            if(Input.GetKeyDown(KeyCode.R))
+            if (Input.GetKeyDown(KeyCode.R))
             {
                 StartCoroutine(waitToReset());
             }
@@ -271,31 +139,17 @@ public class PlayerController : MonoBehaviour
                 return;
             }
 
-            if(Input.GetKeyDown(KeyCode.Space))
+            // Prevent a whole class of bugs by just not allowing this state
+            if (Mathf.Abs(Input.GetAxisRaw("Horizontal")) == 1 && Mathf.Abs(Input.GetAxisRaw("Vertical")) == 1)
             {
-                if(currentItem == Item.BoxingGlove)
+                return;
+            }
+
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                if (currentItem == Item.BoxingGlove)
                 {
-                    Vector3 proposedPunch;
-                    if(facing == MoveDirection.Right)
-                    {
-                        proposedPunch = new Vector3(1, 0);
-                    }
-                    else if(facing == MoveDirection.Left)
-                    {
-                        proposedPunch = new Vector3(-1, 0);
-                    }
-                    else if (facing == MoveDirection.Up)
-                    {
-                        proposedPunch = new Vector3(0, 1);
-                    }
-                    else if (facing == MoveDirection.Down)
-                    {
-                        proposedPunch = new Vector3(0, -1);
-                    }
-                    else
-                    {
-                        throw new Exception();
-                    }
+                    Vector3 proposedPunch = Global.moveVectors[facing];
                     Collider2D punchCollider = Physics2D.OverlapCircle(movePoint.position + proposedPunch, .2f);
 
                     if (punchCollider)
@@ -305,14 +159,12 @@ public class PlayerController : MonoBehaviour
                         {
                             if (blockController.canPush(proposedPunch))
                             {
-                                Debug.Log("Attempting to shift.");
                                 blockController.shift(punchCollider.gameObject.transform.position + proposedPunch);
                                 currentItem = Item.None;
-                                pushMove(new MoveUnit(MoveType.Punch, facing, currentItem, currentItemController));
+                                pushFacingMove(MoveType.Punch);
                             }
                             else
                             {
-                                Debug.Log("Block stop");
                                 return;
                             }
                         }
@@ -322,36 +174,33 @@ public class PlayerController : MonoBehaviour
             }
 
             // Check facing change
+            bool hasChanged = false;
             if (Input.GetAxisRaw("Horizontal") == 1f && facing != MoveDirection.Right)
             {
                 facing = MoveDirection.Right;
-                transform.eulerAngles = new Vector3(0.0f, 0.0f, 90.0f);
-                hasTurned = true;
-                pushMove(new MoveUnit(MoveType.Face, MoveDirection.Right, currentItem, currentItemController));
-                StartCoroutine(waitToMove());
+                hasChanged = true;
             }
-            if (Input.GetAxisRaw("Horizontal") == -1f && facing != MoveDirection.Left)
+            else if (Input.GetAxisRaw("Horizontal") == -1f && facing != MoveDirection.Left)
             {
                 facing = MoveDirection.Left;
-                transform.eulerAngles = new Vector3(0.0f, 0.0f, -90.0f);
-                hasTurned = true;
-                pushMove(new MoveUnit(MoveType.Face, MoveDirection.Left, currentItem, currentItemController));
-                StartCoroutine(waitToMove());
+                hasChanged = true;
             }
-            if (Input.GetAxisRaw("Vertical") == 1f && facing != MoveDirection.Up)
+            else if (Input.GetAxisRaw("Vertical") == 1f && facing != MoveDirection.Up)
             {
                 facing = MoveDirection.Up;
-                transform.eulerAngles = new Vector3(0.0f, 0.0f, 180.0f);
-                hasTurned = true;
-                pushMove(new MoveUnit(MoveType.Face, MoveDirection.Up, currentItem, currentItemController));
-                StartCoroutine(waitToMove());
+                hasChanged = true;
             }
-            if (Input.GetAxisRaw("Vertical") == -1f && facing != MoveDirection.Down)
+            else if (Input.GetAxisRaw("Vertical") == -1f && facing != MoveDirection.Down)
             {
                 facing = MoveDirection.Down;
-                transform.eulerAngles = new Vector3(0.0f, 0.0f, 0.0f);
+                hasChanged = true;
+            }
+
+            if(hasChanged)
+            {
+                transform.eulerAngles = Global.faceVectors[facing];
                 hasTurned = true;
-                pushMove(new MoveUnit(MoveType.Face, MoveDirection.Down, currentItem, currentItemController));
+                pushFacingMove(MoveType.Face);
                 StartCoroutine(waitToMove());
             }
 
@@ -360,98 +209,52 @@ public class PlayerController : MonoBehaviour
                 hasTurned = false;
             }
 
+            // Don't allow movement after a facing change for a short period of time, which is set by coroutine or if the player raises the key
             if (hasTurned)
             {
                 return;
             }
 
-            Vector2 proposedMove;
+            Vector3 proposedMove;
             if (Mathf.Abs(Input.GetAxisRaw("Horizontal")) == 1f)
             {
-                proposedMove = new Vector2(Input.GetAxisRaw("Horizontal"), 0f);
+                proposedMove = new Vector3(Input.GetAxisRaw("Horizontal"), 0f);
             }
             else if (Mathf.Abs(Input.GetAxisRaw("Vertical")) == 1f)
             {
-                proposedMove = new Vector2(0f, Input.GetAxisRaw("Vertical"));
+                proposedMove = new Vector3(0f, Input.GetAxisRaw("Vertical"));
             }
             else
             {
                 return;
             }
-            if (Physics2D.OverlapCircle((Vector2)movePoint.position + proposedMove, .2f, whatStopsMovement))
+            if (Physics2D.OverlapCircle(movePoint.position + proposedMove, .2f, whatStopsMovement))
             {
-                Debug.Log("Wall stop");
                 return;
             }
 
             bool isPush = false;
-            Collider2D collider = Physics2D.OverlapCircle((Vector2)movePoint.position + proposedMove, .2f);
+            Collider2D blockCollider = Physics2D.OverlapCircle(movePoint.position + proposedMove, .2f);
 
-            if(collider)
+            if (blockCollider)
             {
-                BlockController blockController = collider.gameObject.GetComponent<BlockController>();
-                if(blockController != null)
+                BlockController blockController = blockCollider.gameObject.GetComponent<BlockController>();
+                if (blockController != null)
                 {
                     if (blockController.canPush(proposedMove))
                     {
-                        collider.gameObject.GetComponent<BlockController>().push(proposedMove);
+                        blockCollider.gameObject.GetComponent<BlockController>().push(proposedMove);
                         isPush = true;
                     }
                     else
                     {
-                        Debug.Log("Block stop");
                         return;
                     }
                 }
 
             }
-
-            if (Input.GetAxisRaw("Horizontal") == 1f)
-            {
-                if(isPush)
-                {
-                    pushMove(new MoveUnit(MoveType.Push, MoveDirection.Right, currentItem, currentItemController));
-                }
-                else
-                {
-                    pushMove(new MoveUnit(MoveType.Move, MoveDirection.Right, currentItem, currentItemController));
-                }
-            }
-            else if (Input.GetAxisRaw("Horizontal") == -1f)
-            {
-                if (isPush)
-                {
-                    pushMove(new MoveUnit(MoveType.Push, MoveDirection.Left, currentItem, currentItemController));
-                }
-                else
-                {
-                    pushMove(new MoveUnit(MoveType.Move, MoveDirection.Left, currentItem, currentItemController));
-                }
-            }
-            else if (Input.GetAxisRaw("Vertical") == 1f)
-            {
-                if (isPush)
-                {
-                    pushMove(new MoveUnit(MoveType.Push, MoveDirection.Up, currentItem, currentItemController));
-                }
-                else
-                {
-                    pushMove(new MoveUnit(MoveType.Move, MoveDirection.Up, currentItem, currentItemController));
-                }
-            }
-            else if (Input.GetAxisRaw("Vertical") == -1f)
-            {
-                if (isPush)
-                {
-                    pushMove(new MoveUnit(MoveType.Push, MoveDirection.Down, currentItem, currentItemController));
-                }
-                else
-                {
-                    pushMove(new MoveUnit(MoveType.Move, MoveDirection.Down, currentItem, currentItemController));
-                }
-            }
-
-            movePoint.position += (Vector3)proposedMove;
+            pushFacingMove(isPush ? MoveType.Push : MoveType.Move);
+            movePoint.position += proposedMove;
         }
         else
         {
@@ -476,7 +279,6 @@ public class PlayerController : MonoBehaviour
 
     private void executePulse()
     {
-        Debug.Log(currentItem);
         var objects = GameObject.FindGameObjectsWithTag("Object");
         List<IPulsable> pulsableList = new List<IPulsable>();
         foreach (var obj in objects)
@@ -490,9 +292,9 @@ public class PlayerController : MonoBehaviour
         pulsableList.Sort(new PulsableComparer());
         foreach (IPulsable pulsable in pulsableList)
         {
-            if(!isDying || pulsable.canPulseDeadPlayer())
+            if (!isDying || pulsable.canPulseDeadPlayer())
             {
-                pulsable.pulse(); 
+                pulsable.pulse();
             }
         }
         hasPulsed = true;

@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class CrossbowController : MonoBehaviour, IPulsable
 {
-    public string direction;
+    public MoveDirection direction;
     public Material lineMaterial;
 
     private GameObject killLine;
@@ -36,7 +36,6 @@ public class CrossbowController : MonoBehaviour, IPulsable
         killLine = null;
     }
 
-    // Update is called once per frame
     void Update()
     {
 
@@ -44,36 +43,13 @@ public class CrossbowController : MonoBehaviour, IPulsable
 
     public void pulse()
     {
-        Vector2 checkVector;
-        Vector3 lineStartVector;
-        switch (direction)
-        {
-            case "right":
-                checkVector = Vector2.right;
-                lineStartVector = new Vector3(transform.position.x + 0.3f, transform.position.y);
-                break;
-            case "left":
-                checkVector = Vector2.left;
-                lineStartVector = new Vector3(transform.position.x - 0.3f, transform.position.y);
-                break;
-            case "up":
-                checkVector = Vector2.up;
-                lineStartVector = new Vector3(transform.position.x, transform.position.y + 0.3f);
-                break;
-            case "down":
-                checkVector = Vector2.down;
-                lineStartVector = new Vector3(transform.position.x, transform.position.y - 0.3f);
-                break;
-            default:
-                checkVector = Vector2.right;
-                lineStartVector = new Vector3(transform.position.x + 0.3f, transform.position.y);
-                break;
-        }
+        Vector3 checkVector = Global.moveVectors[direction];
+        Vector3 lineStartVector = transform.position + Global.moveVectors[direction] * 0.3f;
+
         RaycastHit2D hit = Physics2D.Raycast(transform.position, checkVector);
         PlayerController playerController = hit.collider.gameObject.GetComponent<PlayerController>();
         if (playerController != null)
         {
-
             DrawKillLine(lineStartVector, hit.collider.transform.position, Color.red);
             playerController.killWithCrossbow();
         }

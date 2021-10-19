@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25c105476c9e74547b3548c65c80105e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  direction: left
+  direction: 2
   lineMaterial: {fileID: 10306, guid: 0000000000000000f000000000000000, type: 0}
 --- !u!61 &-6298838981802539052
 BoxCollider2D:
