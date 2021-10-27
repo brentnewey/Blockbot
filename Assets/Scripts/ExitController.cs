@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -21,8 +22,19 @@ public class ExitController : MonoBehaviour, IPulsable
     {
         if (nextScene == null || nextScene == "")
         {
-            Application.Quit();
-            UnityEditor.EditorApplication.isPlaying = false;
+            string currentScene = SceneManager.GetActiveScene().name;
+            int levelNumber = Int32.Parse(currentScene.Substring(5));
+            string nextScene = "Level" + (levelNumber + 1).ToString();
+            if (SceneManager.GetSceneByName(nextScene).IsValid())
+            {
+                SceneManager.LoadScene(nextScene);
+            }
+            else
+            {
+                Application.Quit();
+                UnityEditor.EditorApplication.isPlaying = false;
+            }
+
         }
         else
         {

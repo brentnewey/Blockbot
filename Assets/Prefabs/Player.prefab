@@ -82,7 +82,9 @@ MonoBehaviour:
   whatStopsMovement:
     serializedVersion: 2
     m_Bits: 8
-  currentScene: 
+  punchSprite: {fileID: 21300000, guid: 1d975a2017b7c9c4083aeab4c78d660e, type: 3}
+  isDying: 0
+  currentItem: 1
 --- !u!61 &5954568747761067742
 BoxCollider2D:
   m_ObjectHideFlags: 0

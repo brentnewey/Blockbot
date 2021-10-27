@@ -4,24 +4,24 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : MonoBehaviour, IBurnable
 {
 
     public float moveSpeed = 5f;
     public Transform movePoint;
 
     public LayerMask whatStopsMovement;
-    public string currentScene;
+    public Sprite punchSprite;
 
     private bool hasPulsed = false;
-    private bool isDying = false;
+    public bool isDying = false;
     private bool hasTurned = false;
     private MoveDirection facing = MoveDirection.Down;
     public Item currentItem = Item.None;
     public IPickupable currentItemController = null;
 
     public MoveUnit lastMove = new MoveUnit(MoveType.Face, MoveDirection.Down, Item.None, null);
-    Stack<MoveRecord> moveChain = new Stack<MoveRecord>();
+    public Stack<MoveRecord> moveChain = new Stack<MoveRecord>();
 
 
     void Start()
@@ -40,17 +40,13 @@ public class PlayerController : MonoBehaviour
         yield return new WaitForSeconds(1f);
         if (Input.GetKey(KeyCode.R))
         {
-            SceneManager.LoadScene(currentScene);
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
     }
 
     void pushMove(MoveUnit move)
     {
-        Debug.Log("Pushing Move");
-        Debug.Log(move.moveType);
-        Debug.Log(move.moveDirection);
         moveChain.Push(new MoveRecord(lastMove, move));
-        Debug.Log(moveChain.Count);
         lastMove = move;
     }
 
@@ -67,10 +63,7 @@ public class PlayerController : MonoBehaviour
         }
         MoveRecord moveRecordToUndo = moveChain.Pop();
         lastMove = moveRecordToUndo.fromMove;
-        Debug.Log("Popping Move");
-        Debug.Log(moveRecordToUndo.toMove.moveType);
-        Debug.Log(moveRecordToUndo.toMove.moveDirection);
-        Debug.Log(moveChain.Count);
+
         if (moveRecordToUndo.toMove.moveType == MoveType.Face)
         {
             facing = moveRecordToUndo.fromMove.moveDirection;
@@ -108,7 +101,13 @@ public class PlayerController : MonoBehaviour
         }
 
         isDying = false;
-        hasPulsed = false;
+
+        foreach(EnemyMove enemyMove in moveRecordToUndo.toMove.enemyMoves)
+        {
+            enemyMove.undoableController.undo(enemyMove.moveType, enemyMove.moveDirection);
+        }
+
+        hasPulsed = true;
     }
 
     void Update()
@@ -151,6 +150,7 @@ public class PlayerController : MonoBehaviour
                 {
                     Vector3 proposedPunch = Global.moveVectors[facing];
                     Collider2D punchCollider = Physics2D.OverlapCircle(movePoint.position + proposedPunch, .2f);
+                    bool drawPunch = false;
 
                     if (punchCollider)
                     {
@@ -159,6 +159,7 @@ public class PlayerController : MonoBehaviour
                         {
                             if (blockController.canPush(proposedPunch))
                             {
+                                drawPunch = true;
                                 blockController.shift(punchCollider.gameObject.transform.position + proposedPunch);
                                 currentItem = Item.None;
                                 pushFacingMove(MoveType.Punch);
@@ -169,6 +170,20 @@ public class PlayerController : MonoBehaviour
                             }
                         }
 
+                    }
+                    else
+                    {
+                        drawPunch = true;
+                    }
+                    if (drawPunch)
+                    {
+                        GameObject punch = new GameObject();
+                        punch.transform.position = movePoint.position + proposedPunch;
+                        punch.AddComponent<SpriteRenderer>();
+                        SpriteRenderer sr = punch.GetComponent<SpriteRenderer>();
+                        sr.sortingLayerName = "GridObject";
+                        sr.sprite = punchSprite;
+                        GameObject.Destroy(punch, 0.2f);
                     }
                 }
             }
@@ -298,5 +313,11 @@ public class PlayerController : MonoBehaviour
             }
         }
         hasPulsed = true;
+    }
+
+    public void burn()
+    {
+        Debug.Log("Burn player.");
+        isDying = true;
     }
 }

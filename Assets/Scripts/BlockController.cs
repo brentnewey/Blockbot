@@ -23,14 +23,14 @@ public class BlockController : MonoBehaviour
         pushPoint.position += proposedMove;
     }
 
-    public void shift(Vector2 shiftPoint)
+    public void shift(Vector3 shiftPoint)
     {
         transform.position = shiftPoint;
         pushPoint.position = shiftPoint;
     }
 
-    public bool canPush(Vector2 proposedMove)
+    public bool canPush(Vector3 proposedMove)
     {
-        return (Physics2D.OverlapCircle((Vector2)pushPoint.position + proposedMove, .2f) == null);
+        return (Physics2D.OverlapCircle(pushPoint.position + proposedMove, .2f) == null);
     }
 }
