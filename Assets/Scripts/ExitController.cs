@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,36 +9,32 @@ public class ExitController : MonoBehaviour, IPulsable
 
     void Start()
     {
-        
     }
 
     void Update()
     {
-        
     }
 
     public void goToExit()
     {
-        if (nextScene == null || nextScene == "")
-        {
-            string currentScene = SceneManager.GetActiveScene().name;
-            int levelNumber = Int32.Parse(currentScene.Substring(5));
-            string nextScene = "Level" + (levelNumber + 1).ToString();
-            if (SceneManager.GetSceneByName(nextScene).IsValid())
-            {
-                SceneManager.LoadScene(nextScene);
-            }
-            else
-            {
-                Application.Quit();
-                UnityEditor.EditorApplication.isPlaying = false;
-            }
-
-        }
-        else
+        if (!string.IsNullOrEmpty(nextScene))
         {
             SceneManager.LoadScene(nextScene);
+            return;
         }
+
+        int currentIndex = SceneManager.GetActiveScene().buildIndex;
+        int nextIndex = currentIndex + 1;
+        if (nextIndex >= 0 && nextIndex < SceneManager.sceneCountInBuildSettings)
+        {
+            SceneManager.LoadScene(nextIndex);
+            return;
+        }
+
+        Application.Quit();
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#endif
     }
 
     public void pulse()
