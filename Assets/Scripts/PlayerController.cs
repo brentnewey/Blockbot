@@ -112,6 +112,11 @@ public class PlayerController : MonoBehaviour, IBurnable
 
     void Update()
     {
+        // Block all input when game is paused
+        if (PauseMenuController.IsGamePaused)
+        {
+            return;
+        }
 
         transform.position = Vector3.MoveTowards(transform.position, movePoint.position, moveSpeed * Time.deltaTime);
 
