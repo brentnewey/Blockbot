@@ -3,7 +3,7 @@ using UnityEngine.SceneManagement;
 
 public static class StartupLoader
 {
-    private const string FirstLevelName = "Level1";
+    private const string FirstLevelName = "TitleScreen";
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void EnsureFirstLevelLoaded()
