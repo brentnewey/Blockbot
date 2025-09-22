@@ -118,6 +118,9 @@ public class PlayerController : MonoBehaviour, IBurnable
             return;
         }
 
+        // Ensure PauseMenuController exists (will auto-create if needed)
+        var pauseController = PauseMenuController.Instance;
+
         transform.position = Vector3.MoveTowards(transform.position, movePoint.position, moveSpeed * Time.deltaTime);
 
 

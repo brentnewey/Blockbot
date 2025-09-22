@@ -16,6 +16,21 @@ public class PauseMenuController : MonoBehaviour
     private GUIStyle selectedStyle;
     private GUIStyle backgroundStyle;
 
+    // Auto-create instance when accessed
+    public static PauseMenuController Instance
+    {
+        get
+        {
+            if (instance == null)
+            {
+                GameObject pauseMenuObj = new GameObject("PauseMenuController");
+                instance = pauseMenuObj.AddComponent<PauseMenuController>();
+                DontDestroyOnLoad(pauseMenuObj);
+            }
+            return instance;
+        }
+    }
+
     void Awake()
     {
         // Singleton pattern - ensure only one instance exists
@@ -23,12 +38,14 @@ public class PauseMenuController : MonoBehaviour
         {
             instance = this;
             DontDestroyOnLoad(gameObject);
-            InitializeStyles();
         }
-        else
+        else if (instance != this)
         {
             Destroy(gameObject);
+            return;
         }
+
+        InitializeStyles();
     }
 
     void Start()
