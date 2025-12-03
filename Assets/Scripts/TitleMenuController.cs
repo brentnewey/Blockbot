@@ -37,6 +37,7 @@ public class TitleMenuController : MonoBehaviour
         if (!canInput) return;
 
         // Navigation
+        #if !UNITY_WEBGL
         if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
         {
             currentSelection = 0;
@@ -47,6 +48,7 @@ public class TitleMenuController : MonoBehaviour
             currentSelection = 1;
             StartCoroutine(InputCooldown());
         }
+        #endif
 
         // Selection
         if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))
@@ -66,13 +68,15 @@ public class TitleMenuController : MonoBehaviour
 
         // Menu options
         string startPrefix = currentSelection == 0 ? "> " : "  ";
-        string quitPrefix = currentSelection == 1 ? "> " : "  ";
-
         GUIStyle startStyle = currentSelection == 0 ? selectedStyle : menuStyle;
-        GUIStyle quitStyle = currentSelection == 1 ? selectedStyle : menuStyle;
 
         GUI.Label(new Rect(0, screenHeight * 0.5f, screenWidth, 50), startPrefix + "Start Game", startStyle);
+
+        #if !UNITY_WEBGL
+        string quitPrefix = currentSelection == 1 ? "> " : "  ";
+        GUIStyle quitStyle = currentSelection == 1 ? selectedStyle : menuStyle;
         GUI.Label(new Rect(0, screenHeight * 0.6f, screenWidth, 50), quitPrefix + "Quit", quitStyle);
+        #endif
 
         // Instructions
         GUIStyle instructionStyle = new GUIStyle(menuStyle);
@@ -88,6 +92,7 @@ public class TitleMenuController : MonoBehaviour
             // Start Game - Load Level1
             SceneManager.LoadScene("Level1");
         }
+        #if !UNITY_WEBGL
         else if (currentSelection == 1)
         {
             // Quit Game
@@ -97,6 +102,7 @@ public class TitleMenuController : MonoBehaviour
                 Application.Quit();
             #endif
         }
+        #endif
     }
 
     IEnumerator InputCooldown()
