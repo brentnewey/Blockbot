@@ -31,9 +31,15 @@ public class ExitController : MonoBehaviour, IPulsable
             return;
         }
 
+        // No more levels - handle end of game
+#if UNITY_WEBGL
+        // For WebGL, return to title screen instead of quitting
+        SceneManager.LoadScene("TitleScreen");
+#else
         Application.Quit();
-#if UNITY_EDITOR
+        #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
+        #endif
 #endif
     }
 
