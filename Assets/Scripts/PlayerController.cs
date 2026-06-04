@@ -121,6 +121,9 @@ public class PlayerController : MonoBehaviour, IBurnable
         // Ensure PauseMenuController exists (will auto-create if needed)
         var pauseController = PauseMenuController.Instance;
 
+        // Ensure the status bar HUD exists (will auto-create if needed)
+        var statusBar = StatusBarController.Instance;
+
         transform.position = Vector3.MoveTowards(transform.position, movePoint.position, moveSpeed * Time.deltaTime);
 
 
